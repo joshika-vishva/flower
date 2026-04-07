@@ -179,15 +179,14 @@
                 <div style="font-size: 0.9rem; font-weight: 800; margin-top: 2px; color: black;">9600208658</div>
             </div>
         </div>
-        <table style="width:100%; border: 1px solid #000; border-collapse: collapse; font-size: 0.9rem; color: black;">
-            <thead><tr>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">No.</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">Date</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">Customer</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">Flower</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">Weight</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:left;">Rate</th>
-                <th style="color:black; background:#fff; border: 1px solid #000; padding:10px; text-align:right;">Total (₹)</th>
+        <table style="width:100%; border: none; border-collapse: collapse; font-size: 0.9rem; color: black; background: white;">
+            <thead><tr style="background: #e5e7eb; border-top: 2px solid #000; border-bottom: 1px solid #000;">
+                <th style="color:black; font-weight:bold; padding:10px; text-align:left;">Date</th>
+                <th style="color:black; font-weight:bold; padding:10px; text-align:left;">Txn Type</th>
+                <th style="color:black; font-weight:bold; padding:10px; text-align:left;">Invoice/ Bill No.</th>
+                <th style="color:black; font-weight:bold; padding:10px; text-align:right;">Debit</th>
+                <th style="color:black; font-weight:bold; padding:10px; text-align:right;">Credit</th>
+                <th style="color:black; font-weight:bold; padding:10px; text-align:right;">Running Balance</th>
             </tr></thead>
             <tbody id="report-rows"></tbody>
         </table>
@@ -348,16 +347,77 @@
             document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
         }
 
+        function buildNestedLedger(bills) {
+            let runningBalance = 0;
+            return bills.map((b) => {
+                runningBalance += b.grandTotal;
+                let itemsHtml = `<table style="width: 80%; margin: 5px 0 15px 10%; border-collapse: collapse; font-size: 0.8rem; color: black;">
+                    <thead>
+                        <tr style="background: #e5e7eb; border-bottom: 2px solid #9ca3af; border-top: 2px solid #9ca3af;">
+                            <th style="padding: 6px; text-align:left; color: black; font-weight:700;">#</th>
+                            <th style="padding: 6px; text-align:left; color: black; font-weight:700;">Item name</th>
+                            <th style="padding: 6px; text-align:center; color: black; font-weight:700;">Quantity</th>
+                            <th style="padding: 6px; text-align:center; color: black; font-weight:700;">Unit</th>
+                            <th style="padding: 6px; text-align:right; color: black; font-weight:700;">Price/ unit</th>
+                            <th style="padding: 6px; text-align:right; color: black; font-weight:700;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                let totalQty = 0;
+                b.items.forEach((it, idx) => {
+                    totalQty += it.quantity;
+                    itemsHtml += `
+                        <tr style="border-bottom: 1px solid #cbd5e1;">
+                            <td style="padding: 6px; color: black;">${idx + 1}</td>
+                            <td style="padding: 6px; color: black; font-weight:500;">${it.name}</td>
+                            <td style="padding: 6px; text-align:center; color: black;">${it.quantity}</td>
+                            <td style="padding: 6px; text-align:center; color: black;">Kg</td>
+                            <td style="padding: 6px; text-align:right; color: black;">₹ ${it.price.toFixed(2)}</td>
+                            <td style="padding: 6px; text-align:right; color: black;">₹ ${(it.quantity * it.price).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                itemsHtml += `
+                        <tr style="border-bottom: 2px solid #9ca3af; border-top: 1px solid #9ca3af; font-weight: bold;">
+                            <td colspan="2" style="padding: 6px; text-align:left; color: black;">Total</td>
+                            <td style="padding: 6px; text-align:center; color: black;">${totalQty}</td>
+                            <td colspan="2"></td>
+                            <td style="padding: 6px; text-align:right; color: black;">₹ ${b.grandTotal.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="4"></td>
+                            <td style="padding: 6px; text-align:right; color: black;">Sub Total:</td>
+                            <td style="padding: 6px; text-align:right; border-bottom: 2px solid #000; color: black;">₹ ${b.grandTotal.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>`;
+
+                return `
+                    <tr style="border-top: 1px solid #000; font-weight: bold;">
+                        <td style="padding: 12px 10px; vertical-align: top; color: black;">${new Date(b.date).toLocaleDateString('en-GB')}</td>
+                        <td style="padding: 12px 10px; vertical-align: top; color: black;">Sale</td>
+                        <td style="padding: 12px 10px; vertical-align: top; color: black;">#${b.id} - ${b.customerName}</td>
+                        <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">₹ ${b.grandTotal.toFixed(2)}</td>
+                        <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">-</td>
+                        <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">₹ ${runningBalance.toFixed(2)} (Dr)</td>
+                    </tr>
+                    <tr style="border-bottom: 2px solid #cbd5e1;">
+                        <td colspan="6" style="padding: 0;">${itemsHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
         function printFullReport() {
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
-            let net = 0;
             document.getElementById('p-date').innerText = new Date().toLocaleDateString();
             document.getElementById('p-desc').innerText = "Sales Statement Report";
-            document.getElementById('report-rows').innerHTML = [...allBills].reverse().map((b, i) => {
-                net += b.grandTotal;
-                return `<tr><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${i + 1}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${new Date(b.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold; border:1px solid #000; padding:8px; vertical-align:top;">${b.customerName}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:black; font-weight:bold; text-align:right; border:1px solid #000; padding:8px; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td></tr>`;
-            }).join('');
+            document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]); // forward chronologically
+            
+            let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
             document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
             window.print();
             reportArea.style.display = 'none';
@@ -366,18 +426,16 @@
         function downloadPDF() {
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
-            let net = 0;
             document.getElementById('p-date').innerText = new Date().toLocaleDateString();
             document.getElementById('p-desc').innerText = "Sales Statement Report";
-            document.getElementById('report-rows').innerHTML = [...allBills].reverse().map((b, i) => {
-                net += b.grandTotal;
-                return `<tr><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${i + 1}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${new Date(b.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold; border:1px solid #000; padding:8px; vertical-align:top;">${b.customerName}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="color:black; border:1px solid #000; padding:8px; vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:black; font-weight:bold; text-align:right; border:1px solid #000; padding:8px; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td></tr>`;
-            }).join('');
+            document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]);
+            
+            let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
             document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
 
             const opt = {
                 margin: [0.5, 0.5, 0.5, 0.5],
-                filename: 'FloraPOS_Sales_Report.pdf',
+                filename: 'FloraPOS_Sales_Statement_Report.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
@@ -393,7 +451,7 @@
             reportArea.style.display = 'block';
             document.getElementById('p-date').innerText = new Date(bill.date).toLocaleDateString();
             document.getElementById('p-desc').innerText = `Receipt No: ${id} - Party: ${bill.customerName}`;
-            document.getElementById('report-rows').innerHTML = bill.items.map((it, i) => `<tr><td style="color:black; border:1px solid #000; padding:8px;">${i+1}</td><td style="color:black; border:1px solid #000; padding:8px;">${new Date(bill.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold; border:1px solid #000; padding:8px;">${bill.customerName}</td><td style="color:black; border:1px solid #000; padding:8px;">${it.name}</td><td style="color:black; border:1px solid #000; padding:8px;">${it.quantity} kg</td><td style="color:black; border:1px solid #000; padding:8px;">₹${it.price}</td><td style="color:black; font-weight:bold; text-align:right; border:1px solid #000; padding:8px;">₹${it.total.toFixed(2)}</td></tr>`).join('');
+            document.getElementById('report-rows').innerHTML = buildNestedLedger([bill]);
             document.getElementById('report-summary-text').innerText = `GRAND TOTAL: ₹${bill.grandTotal.toFixed(2)}`;
             window.print();
             reportArea.style.display = 'none';
