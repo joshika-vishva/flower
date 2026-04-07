@@ -297,26 +297,7 @@
 
         lucide.createIcons();
 
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = true;
-            recognition.lang = 'ta-IN';
-            recognition.onstart = () => document.getElementById('voice-pill').style.display = 'flex';
-            recognition.onend = () => {
-                document.getElementById('voice-pill').style.display = 'none';
-                document.querySelectorAll('.btn-mic-inline').forEach(b => b.classList.remove('active'));
-            };
-            recognition.onresult = (e) => {
-                let trans = '';
-                for (let i = e.resultIndex; i < e.results.length; ++i) trans += e.results[i][0].transcript;
-                if (activeEl) {
-                    if (activeEl.tagName === 'SELECT') match(activeEl, trans);
-                    else activeEl.value = trans;
-                    calc();
-                }
-            };
-        }
+        lucide.createIcons();
 
         async function loadStock() {
             try {
@@ -387,57 +368,6 @@
                 if (totEl) totEl.innerText = `₹${t.toFixed(2)}`;
             });
             document.getElementById('res-grand').innerText = `₹${total.toFixed(2)}`;
-        }
-
-        function addLine(data = null) {
-            const box = document.getElementById('bill-rows');
-            const row = document.createElement('div');
-            row.className = 'terminal-row';
-            const today = new Date().toLocaleDateString('en-CA');
-            const options = catalog.length > 0 ? catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('') : '<option disabled>Loading stock...</option>';
-            
-            const dateVal = data ? new Date(data.date).toLocaleDateString('en-CA') : today;
-            const partyVal = data ? data.party : "";
-            const flowerVal = data ? data.flower : "";
-            const qtyVal = data ? data.qty : "1.0";
-            const priceVal = data ? data.price : "0";
-
-            row.innerHTML = `
-                <div class="field-wrap"><input type="date" class="t-date" value="${dateVal}"></div>
-                <div class="field-wrap"><input type="text" class="t-party" value="${partyVal}" placeholder="Name..."><button class="btn-mic-inline" onclick="talk(this, '.t-party')"><i data-lucide="mic" style="width:16px"></i></button></div>
-                <div class="field-wrap" style="padding-left:5px"><select class="t-flower" onchange="calc()"><option value="">Select Flower...</option>${options}</select><button class="btn-mic-inline" style="right:34px" onclick="talk(this, '.t-flower')"><i data-lucide="mic" style="width:16px"></i></button></div>
-                <input type="number" step="0.1" class="t-qty" value="${qtyVal}" oninput="calc()">
-                <input type="number" class="t-price" value="${priceVal}" oninput="calc()">
-                <span style="text-align: right; font-weight: 800; color: var(--primary-light); font-size:1.1rem" class="t-line-tot">₹0.00</span>
-                <button class="btn-delete" onclick="this.parentElement.remove(); calc();"><i data-lucide="trash-2" style="width:18px"></i></button>
-            `;
-            box.appendChild(row);
-            const select = row.querySelector('.t-flower');
-            if (flowerVal) select.value = flowerVal;
-            lucide.createIcons();
-            calc();
-        }
-
-        function talk(btn, sel) {
-            activeEl = btn.closest('.terminal-row').querySelector(sel);
-            btn.classList.add('active');
-            recognition.start();
-        }
-
-        function match(sel, txt) {
-            const v = txt.toLowerCase().trim();
-            for (let o of sel.options) if (v.includes(o.text.toLowerCase()) || o.text.toLowerCase().includes(v)) { sel.value = o.value; sel.dispatchEvent(new Event('change')); break; }
-        }
-
-        function calc() {
-            let sub = 0;
-            document.querySelectorAll('.terminal-row').forEach(r => {
-                const q = parseFloat(r.querySelector('.t-qty').value) || 0;
-                const p = parseFloat(r.querySelector('.t-price').value) || 0;
-                sub += (q * p);
-                r.querySelector('.t-line-tot').innerText = `₹${(q*p).toFixed(2)}`;
-            });
-            document.getElementById('res-grand').innerText = `₹${(sub * 1.05).toFixed(2)}`;
         }
 
         async function submitBatch() {
