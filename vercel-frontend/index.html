@@ -109,6 +109,27 @@
         .add-line-btn { background: rgba(255,255,255,0.02); border: 2px dashed rgba(255,255,255,0.1); color: var(--text-dim); width: 100%; padding: 1.25rem; border-radius: 16px; cursor: pointer; margin-top: 1.5rem; font-weight: 700; font-size: 1rem; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
         .add-line-btn:hover { border-color: var(--primary-light); color: #fff; background: rgba(139,92,246,0.05); }
 
+        /* Customer Select Buttons */
+        .customer-btns { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .customer-btn { flex: 1; min-width: 160px; padding: 1rem 1.25rem; border-radius: 14px; border: 2px solid var(--card-border); background: rgba(255,255,255,0.03); color: var(--text-dim); font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .customer-btn:hover { border-color: var(--primary-light); color: white; background: rgba(139,92,246,0.1); }
+        .customer-btn.selected { border-color: var(--primary); background: rgba(139,92,246,0.2); color: white; box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+
+        /* Flower Batch Grid */
+        .flower-batch-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; padding: 0 0.5rem 0.75rem; border-bottom: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+        .flower-batch-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; align-items: center; padding: 0.75rem 0.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.03); background: rgba(255,255,255,0.02); margin-bottom: 0.5rem; transition: all 0.2s; }
+        .flower-batch-row:hover { background: rgba(255,255,255,0.04); border-color: rgba(139,92,246,0.3); }
+        .flower-name-label { font-weight: 700; font-size: 1rem; color: var(--text-main); padding: 0 0.5rem; }
+        .batch-total { font-weight: 800; color: var(--primary-light); font-size: 1.05rem; text-align: right; padding-right: 0.5rem; }
+
+        @media (max-width: 850px) {
+            .flower-batch-header { grid-template-columns: 2fr 1fr 1fr; }
+            .flower-batch-header span:last-child { display: none; }
+            .flower-batch-row { grid-template-columns: 2fr 1fr 1fr; }
+            .flower-batch-row .batch-total { display: none; }
+            .customer-btn { font-size: 0.85rem; padding: 0.75rem; }
+        }
+
         @media (max-width: 850px) {
             .app-layout { grid-template-columns: 1fr; display: flex; flex-direction: column; min-height: 100vh; }
             aside { position: relative; height: auto; flex-direction: column; justify-content: flex-start; padding: 1.5rem 1rem 1rem; align-items: center; border-right: none; border-bottom: 1px solid var(--card-border); gap: 1rem; }
@@ -214,9 +235,25 @@
             <div id="tab-bill" class="tab-content">
                 <div class="dashboard-header"><h2>Sales Terminal</h2><button class="btn-action" onclick="loadStock()"><i data-lucide="refresh-cw"></i> Sync Stock</button></div>
                 <div class="glass-card">
-                    <div class="terminal-header"><span>Date</span><span>Party Name</span><span>Flower</span><span style="padding-left:10px">KG</span><span>Price</span><span style="text-align: right">Total</span><span></span></div>
+                    <!-- Step 1: Select Customer -->
+                    <div style="margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em;">Select Customer</div>
+                    <div class="customer-btns">
+                        <button class="customer-btn" id="cust-btn-0" onclick="selectCustomer(0)">தமிழ் நாமக்கல்</button>
+                        <button class="customer-btn" id="cust-btn-1" onclick="selectCustomer(1)">கே கே எஸ் வேலூர்</button>
+                        <button class="customer-btn" id="cust-btn-2" onclick="selectCustomer(2)">என் எஸ் எம் கோவை</button>
+                    </div>
+
+                    <!-- Step 2: Pick Date -->
+                    <div style="display:flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap;">Date</div>
+                        <input type="date" id="batch-date" style="max-width: 200px;">
+                    </div>
+
+                    <!-- Step 3: Enter quantities per flower -->
+                    <div class="flower-batch-header">
+                        <span>Flower</span><span>KG</span><span>Rate (₹)</span><span style="text-align:right">Total</span>
+                    </div>
                     <div id="bill-rows"></div>
-                    <button class="add-line-btn" onclick="addLine()"><i data-lucide="plus-circle"></i> New Transaction Line</button>
                 </div>
             </div>
 
@@ -286,35 +323,70 @@
                 const r = await fetch(`${API}/inventory`);
                 let data = await r.json();
                 
-                // Add new flowers and fix spelling
                 const newFlowers = [
                     { flowerName: "அரளி1", stockInKg: 0 },
                     { flowerName: "ஹைப்ரிட் அரளி 1", stockInKg: 0 }
                 ];
                 
                 if (!data) data = [];
-                
-                // Fix spelling for existing hybrid arali
                 data.forEach(f => {
                     if (f.flowerName === "ஹைப்ரிட் அரலி") f.flowerName = "ஹைப்ரிட் அரளி";
                 });
-                
-                // Add if not exists
                 newFlowers.forEach(nf => {
                     if (!data.find(d => d.flowerName === nf.flowerName)) data.push(nf);
                 });
 
                 if (data && data.length > 0) {
                     catalog = data;
-                    document.querySelectorAll('.t-flower').forEach(sel => {
-                        const currentVal = sel.value;
-                        sel.innerHTML = `<option value="">Select Flower...</option>` + 
-                            catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('');
-                        sel.value = currentVal;
-                    });
-                    document.getElementById('stock-list').innerHTML = catalog.map(c => `<tr><td style="padding:1rem; font-weight:700;">${c.flowerName}</td><td style="color:var(--primary-light)">${c.stockInKg} KG</td></tr>`).join('');
+                    buildFlowerRows();
+                    const stockEl = document.getElementById('stock-list');
+                    if (stockEl) stockEl.innerHTML = catalog.map(c => `<tr><td style="padding:1rem; font-weight:700;">${c.flowerName}</td><td style="color:var(--primary-light)">${c.stockInKg} KG</td></tr>`).join('');
                 }
             } catch(e) { console.error(e); }
+        }
+
+        const CUSTOMERS = ["தமிழ் நாமக்கல்", "கே கே எஸ் வேலூர்", "என் எஸ் எம் கோவை"];
+        let selectedCustomerIdx = -1;
+
+        function selectCustomer(idx) {
+            selectedCustomerIdx = idx;
+            document.querySelectorAll('.customer-btn').forEach((b, i) => {
+                b.classList.toggle('selected', i === idx);
+            });
+        }
+
+        function buildFlowerRows(editData = null) {
+            const box = document.getElementById('bill-rows');
+            if (!box) return;
+            box.innerHTML = '';
+            catalog.forEach((flower, i) => {
+                const row = document.createElement('div');
+                row.className = 'flower-batch-row';
+                const qty = editData && editData.items && editData.items[i] ? editData.items[i].quantity : '';
+                const price = editData && editData.items && editData.items[i] ? editData.items[i].price : '';
+                row.dataset.flower = flower.flowerName;
+                row.innerHTML = `
+                    <div class="flower-name-label">${flower.flowerName}</div>
+                    <input type="number" step="0.1" min="0" class="b-qty" placeholder="0" value="${qty}" oninput="calcBatch()">
+                    <input type="number" class="b-price" placeholder="Rate" value="${price}" oninput="calcBatch()">
+                    <div class="batch-total" id="btotal-${i}">₹0.00</div>
+                `;
+                box.appendChild(row);
+            });
+            calcBatch();
+        }
+
+        function calcBatch() {
+            let total = 0;
+            document.querySelectorAll('.flower-batch-row').forEach((row, i) => {
+                const q = parseFloat(row.querySelector('.b-qty').value) || 0;
+                const p = parseFloat(row.querySelector('.b-price').value) || 0;
+                const t = q * p;
+                total += t;
+                const totEl = document.getElementById(`btotal-${i}`);
+                if (totEl) totEl.innerText = `₹${t.toFixed(2)}`;
+            });
+            document.getElementById('res-grand').innerText = `₹${total.toFixed(2)}`;
         }
 
         function addLine(data = null) {
@@ -369,31 +441,44 @@
         }
 
         async function submitBatch() {
-            const rows = document.querySelectorAll('.terminal-row');
+            if (selectedCustomerIdx < 0) {
+                alert('Please select a customer first!');
+                return;
+            }
+            const customer = CUSTOMERS[selectedCustomerIdx];
+            const dateInput = document.getElementById('batch-date').value;
+            const d = dateInput ? new Date(dateInput) : new Date();
+            d.setHours(12, 0, 0, 0);
+            const isoDate = d.toISOString();
+
             const items = [];
-            let party = "";
-            let date = new Date().toISOString();
-            
-            rows.forEach(r => {
-                date = new Date(r.querySelector('.t-date').value).toISOString();
-                party = r.querySelector('.t-party').value;
-                items.push({
-                    name: r.querySelector('.t-flower').value,
-                    quantity: parseFloat(r.querySelector('.t-qty').value),
-                    price: parseFloat(r.querySelector('.t-price').value)
-                });
+            document.querySelectorAll('.flower-batch-row').forEach(row => {
+                const q = parseFloat(row.querySelector('.b-qty').value) || 0;
+                const p = parseFloat(row.querySelector('.b-price').value) || 0;
+                if (q > 0) {
+                    items.push({ name: row.dataset.flower, quantity: q, price: p });
+                }
             });
 
-            const billData = { date, customerName: party || "Walk-in", items };
-            
+            if (items.length === 0) {
+                alert('Please enter KG for at least one flower!');
+                return;
+            }
+
+            const billData = { date: isoDate, customerName: customer, items };
+
             if (editingBillId) {
                 await fetch(`${API}/bills/${editingBillId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(billData) });
             } else {
                 await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(billData) });
             }
-            
+
             editingBillId = null;
-            document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
+            // Reset form
+            buildFlowerRows();
+            selectCustomer(-1);
+            document.getElementById('batch-date').value = new Date().toLocaleDateString('en-CA');
+            tabs('history');
         }
 
         function getCommonCustomer(bills) {
@@ -555,18 +640,25 @@
             if (!bill) return;
 
             editingBillId = id;
-            document.getElementById('bill-rows').innerHTML = '';
             
-            // Map bill items to terminal rows
+            // Pre-select customer
+            const custIdx = CUSTOMERS.indexOf(bill.customerName);
+            selectCustomer(custIdx);
+
+            // Set date
+            const dateInput = document.getElementById('batch-date');
+            if (dateInput) dateInput.value = new Date(bill.date).toLocaleDateString('en-CA');
+
+            // Rebuild flower rows and fill in values
+            buildFlowerRows();
             bill.items.forEach(item => {
-                addLine({
-                    date: bill.date,
-                    party: bill.customerName,
-                    flower: item.name,
-                    qty: item.quantity,
-                    price: item.price
-                });
+                const row = [...document.querySelectorAll('.flower-batch-row')].find(r => r.dataset.flower === item.name);
+                if (row) {
+                    row.querySelector('.b-qty').value = item.quantity;
+                    row.querySelector('.b-price').value = item.price;
+                }
             });
+            calcBatch();
 
             tabs('bill');
         }
