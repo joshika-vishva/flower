@@ -25,7 +25,9 @@ public class BillService {
 
     @Transactional
     public Bill createBill(Bill bill) {
-        bill.setDate(LocalDateTime.now());
+        if (bill.getDate() == null) {
+            bill.setDate(LocalDateTime.now());
+        }
         
         double subtotal = 0.0;
         

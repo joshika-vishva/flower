@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root {
             --primary: #8b5cf6;
@@ -70,8 +71,8 @@
 
         .glass-card { background: var(--card-glass); backdrop-filter: blur(40px) saturate(150%); border: 1px solid var(--card-border); border-radius: 24px; padding: 2rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.05); margin-bottom: 2rem; animation: slideIn 0.5s ease-out; }
 
-        .terminal-header { display: grid; grid-template-columns: 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.5rem; padding: 0 1.25rem 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
-        .terminal-row { display: grid; grid-template-columns: 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.5rem; align-items: center; padding: 1rem 1.25rem; border-radius: 16px; background: rgba(255,255,255,0.02); margin-top: 1rem; border: 1px solid rgba(255,255,255,0.03); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); animation: slideIn 0.3s ease-out forwards; }
+        .terminal-header { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.5rem; padding: 0 1.25rem 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+        .terminal-row { display: grid; grid-template-columns: 1fr 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.5rem; align-items: center; padding: 1rem 1.25rem; border-radius: 16px; background: rgba(255,255,255,0.02); margin-top: 1rem; border: 1px solid rgba(255,255,255,0.03); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); animation: slideIn 0.3s ease-out forwards; }
         .terminal-row:hover { background: rgba(255,255,255,0.04); transform: translateY(-3px) scale(1.002); border-color: rgba(139,92,246,0.4); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
         .field-wrap { position: relative; width: 100%; display: flex; align-items: center; }
@@ -125,7 +126,8 @@
             .terminal-header { display: none; }
             .terminal-row { grid-template-columns: 1fr 1fr; gap: 0.75rem; position: relative; padding: 1rem; display: grid; }
             .terminal-row .field-wrap:nth-child(1) { grid-column: span 2; }
-            .terminal-row .field-wrap:nth-child(2) { grid-column: span 2; padding-left: 0 !important; }
+            .terminal-row .field-wrap:nth-child(2) { grid-column: span 2; }
+            .terminal-row .field-wrap:nth-child(3) { grid-column: span 2; padding-left: 0 !important; }
             
             .t-qty, .t-price { font-size: 0.95rem; }
             .t-line-tot { grid-column: span 2; text-align: left !important; font-size: 1.4rem !important; margin-top: 0.5rem; }
@@ -204,14 +206,14 @@
             <div id="tab-bill" class="tab-content">
                 <div class="dashboard-header"><h2>Sales Terminal</h2><button class="btn-action" onclick="loadStock()"><i data-lucide="refresh-cw"></i> Sync Stock</button></div>
                 <div class="glass-card">
-                    <div class="terminal-header"><span>Party Name</span><span>Flower</span><span style="padding-left:10px">KG</span><span>Price</span><span style="text-align: right">Total</span><span></span></div>
+                    <div class="terminal-header"><span>Date</span><span>Party Name</span><span>Flower</span><span style="padding-left:10px">KG</span><span>Price</span><span style="text-align: right">Total</span><span></span></div>
                     <div id="bill-rows"></div>
                     <button class="add-line-btn" onclick="addLine()"><i data-lucide="plus-circle"></i> New Transaction Line</button>
                 </div>
             </div>
 
             <div id="tab-history" class="tab-content hidden">
-                <div class="dashboard-header"><h2>Transaction Ledger</h2><button class="btn-save-pro" onclick="printFullReport()"><i data-lucide="printer"></i> Full Sales Report</button></div>
+                <div class="dashboard-header"><h2>Transaction Ledger</h2><div style="display:flex; gap:10px"><button class="btn-save-pro" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="downloadPDF()"><i data-lucide="download"></i> Download PDF</button><button class="btn-save-pro" onclick="printFullReport()"><i data-lucide="printer"></i> Print Status</button></div></div>
                 <div class="excel-table-container"><table class="excel-table"><thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Flower</th><th>Weight</th><th>Rate</th><th>Total</th><th>Options</th></tr></thead><tbody id="excel-body"></tbody></table></div>
             </div>
 
@@ -277,14 +279,16 @@
             const box = document.getElementById('bill-rows');
             const row = document.createElement('div');
             row.className = 'terminal-row';
+            const today = new Date().toLocaleDateString('en-CA');
             const options = catalog.length > 0 ? catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('') : '<option disabled>Loading stock...</option>';
             row.innerHTML = `
+                <div class="field-wrap"><input type="date" class="t-date" value="${today}"></div>
                 <div class="field-wrap"><input type="text" class="t-party" placeholder="Name..."><button class="btn-mic-inline" onclick="talk(this, '.t-party')"><i data-lucide="mic" style="width:16px"></i></button></div>
                 <div class="field-wrap" style="padding-left:5px"><select class="t-flower" onchange="calc()"><option value="">Select Flower...</option>${options}</select><button class="btn-mic-inline" style="right:34px" onclick="talk(this, '.t-flower')"><i data-lucide="mic" style="width:16px"></i></button></div>
                 <input type="number" step="0.1" class="t-qty" value="1.0" oninput="calc()">
                 <input type="number" class="t-price" value="0" oninput="calc()">
                 <span style="text-align: right; font-weight: 800; color: var(--primary-light); font-size:1.1rem" class="t-line-tot">₹0.00</span>
-                <button style="background:transparent; border:none; color:var(--accent); cursor:pointer;" onclick="this.parentElement.remove(); calc();"><i data-lucide="trash-2" style="width:18px"></i></button>
+                <button class="btn-delete" onclick="this.parentElement.remove(); calc();"><i data-lucide="trash-2" style="width:18px"></i></button>
             `;
             box.appendChild(row);
             lucide.createIcons();
@@ -316,11 +320,22 @@
         async function submitBatch() {
             const rows = document.querySelectorAll('.terminal-row');
             for (let r of rows) {
+                const dateStr = r.querySelector('.t-date').value;
+                let isoDate = null;
+                if (dateStr) {
+                    const d = new Date(dateStr);
+                    d.setHours(12, 0, 0, 0); // Sets time to midday to avoid timezone shifts
+                    isoDate = d.toISOString();
+                } else {
+                    isoDate = new Date().toISOString();
+                }
                 const party = r.querySelector('.t-party').value;
                 const item = r.querySelector('.t-flower').value;
                 const q = parseFloat(r.querySelector('.t-qty').value);
                 const p = parseFloat(r.querySelector('.t-price').value);
-                if (item && q > 0) await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: party || "Walk-in", items: [{ name: item, quantity: q, price: p }] }) });
+                if (item && q > 0) {
+                    await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: isoDate, customerName: party || "Walk-in", items: [{ name: item, quantity: q, price: p }] }) });
+                }
             }
             document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
         }
@@ -338,6 +353,30 @@
             document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
             window.print();
             reportArea.style.display = 'none';
+        }
+
+        function downloadPDF() {
+            const reportArea = document.getElementById('report-printable');
+            reportArea.style.display = 'block';
+            let net = 0;
+            document.getElementById('p-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('p-desc').innerText = "Sales Statement Report";
+            document.getElementById('report-rows').innerHTML = [...allBills].reverse().map((b, i) => {
+                net += b.grandTotal;
+                return `<tr><td style="color:black; vertical-align:top;">${i + 1}</td><td style="color:black; vertical-align:top;">${new Date(b.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold; vertical-align:top;">${b.customerName}</td><td style="color:black; vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="color:black; vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="color:black; vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:black; font-weight:bold; text-align:right; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td></tr>`;
+            }).join('');
+            document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
+
+            const opt = {
+                margin: [0.5, 0.5, 0.5, 0.5],
+                filename: 'FloraPOS_Sales_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(reportArea).save().then(() => {
+                reportArea.style.display = 'none';
+            });
         }
 
         function printBill(id) {
