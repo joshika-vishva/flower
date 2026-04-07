@@ -1,0 +1,22 @@
+{
+  "name": "FloraVoice ERP",
+  "short_name": "FloraVoice",
+  "description": "Flower Shop Sales Terminal",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#03040b",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/murugan.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/murugan.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
