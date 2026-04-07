@@ -3,21 +3,40 @@
   "short_name": "FloraVoice",
   "description": "Smart automated sales terminal for V.K.Y. Flower Stall",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#03040b",
   "theme_color": "#8b5cf6",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "finance"],
   "icons": [
     {
       "src": "/murugan.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/murugan.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/murugan.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "FloraVoice Terminal Desktop"
+    },
+    {
+      "src": "/murugan.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "FloraVoice Terminal Mobile"
     }
   ]
 }
