@@ -82,6 +82,27 @@ public class BillService {
 
     @Transactional
     public Bill updateBill(Long id, Bill updatedBill) {
-        return null;
+        Bill existingBill = billRepository.findById(id).orElseThrow(() -> new RuntimeException("Bill not found"));
+        
+        existingBill.setCustomerName(updatedBill.getCustomerName());
+        if (updatedBill.getDate() != null) existingBill.setDate(updatedBill.getDate());
+        
+        existingBill.getItems().clear();
+        existingBill.getItems().addAll(updatedBill.getItems());
+        
+        double subtotal = 0.0;
+        for (FlowerItem item : existingBill.getItems()) {
+            double itemTotal = item.getQuantity() * item.getPrice();
+            item.setTotal(itemTotal);
+            subtotal += itemTotal;
+        }
+        existingBill.setSubtotal(subtotal);
+        double gstPercentage = existingBill.getGstPercentage() != null ? existingBill.getGstPercentage() : 0.0;
+        double gstAmount = (subtotal * gstPercentage) / 100;
+        existingBill.setGstAmount(gstAmount);
+        double discountAmount = existingBill.getDiscountAmount() != null ? existingBill.getDiscountAmount() : 0.0;
+        existingBill.setGrandTotal(subtotal + gstAmount - discountAmount);
+        
+        return billRepository.save(existingBill);
     }
 }
