@@ -254,6 +254,7 @@
         let catalog = [];
         let allBills = [];
         let filteredBills = null;
+        let editingBillId = null;
         let recognition;
         let activeEl = null;
 
@@ -316,22 +317,31 @@
             } catch(e) { console.error(e); }
         }
 
-        function addLine() {
+        function addLine(data = null) {
             const box = document.getElementById('bill-rows');
             const row = document.createElement('div');
             row.className = 'terminal-row';
             const today = new Date().toLocaleDateString('en-CA');
             const options = catalog.length > 0 ? catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('') : '<option disabled>Loading stock...</option>';
+            
+            const dateVal = data ? new Date(data.date).toLocaleDateString('en-CA') : today;
+            const partyVal = data ? data.party : "";
+            const flowerVal = data ? data.flower : "";
+            const qtyVal = data ? data.qty : "1.0";
+            const priceVal = data ? data.price : "0";
+
             row.innerHTML = `
-                <div class="field-wrap"><input type="date" class="t-date" value="${today}"></div>
-                <div class="field-wrap"><input type="text" class="t-party" placeholder="Name..."><button class="btn-mic-inline" onclick="talk(this, '.t-party')"><i data-lucide="mic" style="width:16px"></i></button></div>
+                <div class="field-wrap"><input type="date" class="t-date" value="${dateVal}"></div>
+                <div class="field-wrap"><input type="text" class="t-party" value="${partyVal}" placeholder="Name..."><button class="btn-mic-inline" onclick="talk(this, '.t-party')"><i data-lucide="mic" style="width:16px"></i></button></div>
                 <div class="field-wrap" style="padding-left:5px"><select class="t-flower" onchange="calc()"><option value="">Select Flower...</option>${options}</select><button class="btn-mic-inline" style="right:34px" onclick="talk(this, '.t-flower')"><i data-lucide="mic" style="width:16px"></i></button></div>
-                <input type="number" step="0.1" class="t-qty" value="1.0" oninput="calc()">
-                <input type="number" class="t-price" value="0" oninput="calc()">
+                <input type="number" step="0.1" class="t-qty" value="${qtyVal}" oninput="calc()">
+                <input type="number" class="t-price" value="${priceVal}" oninput="calc()">
                 <span style="text-align: right; font-weight: 800; color: var(--primary-light); font-size:1.1rem" class="t-line-tot">₹0.00</span>
                 <button class="btn-delete" onclick="this.parentElement.remove(); calc();"><i data-lucide="trash-2" style="width:18px"></i></button>
             `;
             box.appendChild(row);
+            const select = row.querySelector('.t-flower');
+            if (flowerVal) select.value = flowerVal;
             lucide.createIcons();
             calc();
         }
@@ -360,24 +370,29 @@
 
         async function submitBatch() {
             const rows = document.querySelectorAll('.terminal-row');
-            for (let r of rows) {
-                const dateStr = r.querySelector('.t-date').value;
-                let isoDate = null;
-                if (dateStr) {
-                    const d = new Date(dateStr);
-                    d.setHours(12, 0, 0, 0); // Sets time to midday to avoid timezone shifts
-                    isoDate = d.toISOString();
-                } else {
-                    isoDate = new Date().toISOString();
-                }
-                const party = r.querySelector('.t-party').value;
-                const item = r.querySelector('.t-flower').value;
-                const q = parseFloat(r.querySelector('.t-qty').value);
-                const p = parseFloat(r.querySelector('.t-price').value);
-                if (item && q > 0) {
-                    await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: isoDate, customerName: party || "Walk-in", items: [{ name: item, quantity: q, price: p }] }) });
-                }
+            const items = [];
+            let party = "";
+            let date = new Date().toISOString();
+            
+            rows.forEach(r => {
+                date = new Date(r.querySelector('.t-date').value).toISOString();
+                party = r.querySelector('.t-party').value;
+                items.push({
+                    name: r.querySelector('.t-flower').value,
+                    quantity: parseFloat(r.querySelector('.t-qty').value),
+                    price: parseFloat(r.querySelector('.t-price').value)
+                });
+            });
+
+            const billData = { date, customerName: party || "Walk-in", items };
+            
+            if (editingBillId) {
+                await fetch(`${API}/bills/${editingBillId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(billData) });
+            } else {
+                await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(billData) });
             }
+            
+            editingBillId = null;
             document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
         }
 
@@ -518,13 +533,42 @@
             }
             const activeList = filteredBills || allBills;
             const body = document.getElementById('excel-body');
-            body.innerHTML = [...activeList].reverse().map((b,i) => `<tr><td style="vertical-align:top;">${i + 1}</td><td style="white-space:nowrap; vertical-align:top;">${new Date(b.date).toLocaleString()}</td><td style="font-weight:700; vertical-align:top;"><span class="customer-link" style="cursor:pointer; color:var(--primary-light); text-decoration:underline" onclick="filterCustomer('${b.customerName}')">${b.customerName}</span></td><td style="vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:var(--primary-light); font-weight:800; font-size:1.1rem; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td><td style="vertical-align:top;"><button class="btn-action" onclick="printBill(${b.id})"><i data-lucide="printer"></i> Receipt</button></td></tr>`).join('');
+            body.innerHTML = [...activeList].reverse().map((b,i) => `<tr><td style="vertical-align:top;">${i + 1}</td><td style="white-space:nowrap; vertical-align:top;">${new Date(b.date).toLocaleString()}</td><td style="font-weight:700; vertical-align:top;"><span class="customer-link" style="cursor:pointer; color:var(--primary-light); text-decoration:underline" onclick="filterCustomer('${b.customerName}')">${b.customerName}</span></td><td style="vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:var(--primary-light); font-weight:800; font-size:1.1rem; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td><td style="vertical-align:top;"><div style="display:flex; gap:5px"><button class="btn-action" onclick="printBill(${b.id})"><i data-lucide="printer"></i></button><button class="btn-action" style="background:rgba(139,92,246,0.1)" onclick="editBill(${b.id})"><i data-lucide="edit-3"></i></button><button class="btn-action" style="background:rgba(239,68,68,0.1); color:var(--danger)" onclick="deleteBill(${b.id})"><i data-lucide="trash-2"></i></button></div></td></tr>`).join('');
             
             const resetBtn = document.getElementById('btn-reset-filter');
             if (filteredBills) resetBtn.classList.remove('hidden');
             else resetBtn.classList.add('hidden');
             
             lucide.createIcons();
+        }
+
+        async function deleteBill(id) {
+            if (confirm("Are you sure you want to delete this bill permanently?")) {
+                await fetch(`${API}/bills/${id}`, { method: 'DELETE' });
+                filteredBills = null;
+                loadHistory();
+            }
+        }
+
+        async function editBill(id) {
+            const bill = allBills.find(b => b.id === id);
+            if (!bill) return;
+
+            editingBillId = id;
+            document.getElementById('bill-rows').innerHTML = '';
+            
+            // Map bill items to terminal rows
+            bill.items.forEach(item => {
+                addLine({
+                    date: bill.date,
+                    party: bill.customerName,
+                    flower: item.name,
+                    qty: item.quantity,
+                    price: item.price
+                });
+            });
+
+            tabs('bill');
         }
 
         function filterCustomer(name) {
