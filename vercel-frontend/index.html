@@ -221,7 +221,20 @@
             </div>
 
             <div id="tab-history" class="tab-content hidden">
-                <div class="dashboard-header"><h2>Transaction Ledger</h2><div style="display:flex; gap:10px"><button class="btn-save-pro" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="downloadPDF()"><i data-lucide="download"></i> Download PDF</button><button class="btn-save-pro" onclick="printFullReport()"><i data-lucide="printer"></i> Print Status</button></div></div>
+                <div class="dashboard-header">
+                    <h2>Transaction Ledger</h2>
+                    <div style="display:flex; gap:10px">
+                        <button id="btn-reset-filter" class="btn-action hidden" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3);" onclick="filterCustomer(null)">
+                            <i data-lucide="x-circle"></i> Reset Filter
+                        </button>
+                        <button class="btn-save-pro" style="background: linear-gradient(135deg, #10b981, #059669);" onclick="downloadPDF()">
+                            <i data-lucide="download"></i> Download PDF
+                        </button>
+                        <button class="btn-save-pro" onclick="printFullReport()">
+                            <i data-lucide="printer"></i> Print Status
+                        </button>
+                    </div>
+                </div>
                 <div class="excel-table-container"><table class="excel-table"><thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Flower</th><th>Weight</th><th>Rate</th><th>Total</th><th>Options</th></tr></thead><tbody id="excel-body"></tbody></table></div>
             </div>
 
@@ -240,6 +253,7 @@
             : "https://flower-qyql.onrender.com/api";
         let catalog = [];
         let allBills = [];
+        let filteredBills = null;
         let recognition;
         let activeEl = null;
 
@@ -376,7 +390,8 @@
 
         function buildNestedLedger(bills) {
             let runningBalance = 0;
-            return bills.map((b) => {
+            const targetBills = [...bills].sort((a,b) => new Date(a.date) - new Date(b.date)); // Sort chronologically for ledger
+            return targetBills.map((b) => {
                 runningBalance += b.grandTotal;
                 let itemsHtml = `<table style="width: 80%; margin: 5px 0 15px 10%; border-collapse: collapse; font-size: 0.8rem; color: black;">
                     <thead>
@@ -438,7 +453,8 @@
         }
 
         function printFullReport() {
-            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer([...allBills]));
+            const activeList = filteredBills || allBills;
+            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer(activeList));
             if (cust === null) return;
 
             const reportArea = document.getElementById('report-printable');
@@ -446,16 +462,17 @@
             document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
             document.getElementById('p-customer').innerText = cust;
-            document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]); // forward chronologically
+            document.getElementById('report-rows').innerHTML = buildNestedLedger(activeList);
             
-            let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
+            let net = activeList.reduce((acc, b) => acc + b.grandTotal, 0);
             document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
             window.print();
             reportArea.style.display = 'none';
         }
 
         function downloadPDF() {
-            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer([...allBills]));
+            const activeList = filteredBills || allBills;
+            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer(activeList));
             if (cust === null) return;
 
             const reportArea = document.getElementById('report-printable');
@@ -463,9 +480,9 @@
             document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
             document.getElementById('p-customer').innerText = cust;
-            document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]);
+            document.getElementById('report-rows').innerHTML = buildNestedLedger(activeList);
             
-            let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
+            let net = activeList.reduce((acc, b) => acc + b.grandTotal, 0);
             document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
 
             const opt = {
@@ -496,10 +513,27 @@
         }
 
         async function loadHistory() {
-            const r = await fetch(`${API}/bills`); allBills = await r.json();
+            if (!filteredBills) {
+                const r = await fetch(`${API}/bills`); allBills = await r.json();
+            }
+            const activeList = filteredBills || allBills;
             const body = document.getElementById('excel-body');
-            body.innerHTML = [...allBills].reverse().map((b,i) => `<tr><td style="vertical-align:top;">${i + 1}</td><td style="white-space:nowrap; vertical-align:top;">${new Date(b.date).toLocaleString()}</td><td style="font-weight:700; vertical-align:top;">${b.customerName}</td><td style="vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:var(--primary-light); font-weight:800; font-size:1.1rem; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td><td style="vertical-align:top;"><button class="btn-action" onclick="printBill(${b.id})"><i data-lucide="printer"></i> Receipt</button></td></tr>`).join('');
+            body.innerHTML = [...activeList].reverse().map((b,i) => `<tr><td style="vertical-align:top;">${i + 1}</td><td style="white-space:nowrap; vertical-align:top;">${new Date(b.date).toLocaleString()}</td><td style="font-weight:700; vertical-align:top;"><span class="customer-link" style="cursor:pointer; color:var(--primary-light); text-decoration:underline" onclick="filterCustomer('${b.customerName}')">${b.customerName}</span></td><td style="vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:var(--primary-light); font-weight:800; font-size:1.1rem; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td><td style="vertical-align:top;"><button class="btn-action" onclick="printBill(${b.id})"><i data-lucide="printer"></i> Receipt</button></td></tr>`).join('');
+            
+            const resetBtn = document.getElementById('btn-reset-filter');
+            if (filteredBills) resetBtn.classList.remove('hidden');
+            else resetBtn.classList.add('hidden');
+            
             lucide.createIcons();
+        }
+
+        function filterCustomer(name) {
+            if (name === null) {
+                filteredBills = null;
+            } else {
+                filteredBills = allBills.filter(b => b.customerName === name);
+            }
+            loadHistory();
         }
 
         function tabs(t) {
