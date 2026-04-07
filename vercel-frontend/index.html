@@ -166,6 +166,7 @@
             <div style="text-align: left; color: black;">
                 <div id="p-date" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; color: black;">-</div>
                 <img src="/murugan.png" style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px;" alt="Lord Murugan">
+                <div id="p-customer" style="font-size: 1.1rem; font-weight: 900; margin-top: 5px; color: black; text-transform: uppercase;"></div>
             </div>
             <div style="text-align: center; color: black;">
                 <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 2px; color: black;">ஓம் முருகன் துணை</div>
@@ -347,6 +348,13 @@
             document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
         }
 
+        function getCommonCustomer(bills) {
+            if (!bills || bills.length === 0) return "";
+            const first = bills[0].customerName;
+            const allSame = bills.every(b => b.customerName === first);
+            return allSame ? first : "ALL CUSTOMERS";
+        }
+
         function buildNestedLedger(bills) {
             let runningBalance = 0;
             return bills.map((b) => {
@@ -398,7 +406,7 @@
                     <tr style="border-top: 1px solid #000; font-weight: bold;">
                         <td style="padding: 12px 10px; vertical-align: top; color: black;">${new Date(b.date).toLocaleDateString('en-GB')}</td>
                         <td style="padding: 12px 10px; vertical-align: top; color: black;">Sale</td>
-                        <td style="padding: 12px 10px; vertical-align: top; color: black;">#${b.id} - ${b.customerName}</td>
+                        <td style="padding: 12px 10px; vertical-align: top; color: black;">#${b.id}</td>
                         <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">₹ ${b.grandTotal.toFixed(2)}</td>
                         <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">-</td>
                         <td style="padding: 12px 10px; vertical-align: top; text-align: right; color: black;">₹ ${runningBalance.toFixed(2)} (Dr)</td>
@@ -413,8 +421,9 @@
         function printFullReport() {
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
-            document.getElementById('p-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
+            document.getElementById('p-customer').innerText = getCommonCustomer([...allBills]);
             document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]); // forward chronologically
             
             let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
@@ -426,8 +435,9 @@
         function downloadPDF() {
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
-            document.getElementById('p-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
+            document.getElementById('p-customer').innerText = getCommonCustomer([...allBills]);
             document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]);
             
             let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
@@ -442,6 +452,8 @@
             };
             html2pdf().set(opt).from(reportArea).save().then(() => {
                 reportArea.style.display = 'none';
+            }).catch(e => {
+                reportArea.style.display = 'none';
             });
         }
 
@@ -449,8 +461,9 @@
             const bill = allBills.find(b => b.id === id);
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
-            document.getElementById('p-date').innerText = new Date(bill.date).toLocaleDateString();
-            document.getElementById('p-desc').innerText = `Receipt No: ${id} - Party: ${bill.customerName}`;
+            document.getElementById('p-date').innerText = new Date(bill.date).toLocaleDateString('en-GB');
+            document.getElementById('p-desc').innerText = `Receipt No: ${id}`;
+            document.getElementById('p-customer').innerText = bill.customerName;
             document.getElementById('report-rows').innerHTML = buildNestedLedger([bill]);
             document.getElementById('report-summary-text').innerText = `GRAND TOTAL: ₹${bill.grandTotal.toFixed(2)}`;
             window.print();
