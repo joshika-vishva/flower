@@ -1,0 +1,8 @@
+node_modules/
+target/
+.idea/
+.m2/
+*.mv.db
+*.trace.db
+db/
+*.log

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloraVoice | V.K.Y. Flower Stall</title>
+    <link rel="icon" type="image/png" href="/murugan.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-light: #a78bfa;
+            --secondary: #fb7185;
+            --accent: #f43f5e;
+            --bg: #030712;
+            --card-glass: rgba(17, 24, 39, 0.85);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --input-bg: rgba(0, 0, 0, 0.65);
+            --text-main: #f9fafb;
+            --text-dim: #9ca3af;
+            --nav-bg: #09090b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body { 
+            background: var(--bg); color: var(--text-main); min-height: 100vh; overflow-x: hidden;
+            background-image: radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.12) 0%, transparent 40%),
+                              radial-gradient(circle at 90% 80%, rgba(251, 113, 133, 0.08) 0%, transparent 40%);
+        }
+
+        .app-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        
+        aside { background: var(--nav-bg); border-right: 1px solid var(--card-border); padding: 2rem 1.25rem; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; z-index: 100; }
+        .brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 3.5rem; }
+        .brand-icon { background: linear-gradient(135deg, var(--primary), var(--secondary)); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .brand h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+
+        .nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: 10px; color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer; margin-bottom: 0.5rem; }
+        .nav-link:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
+        .nav-link.active { background: rgba(139, 92, 246, 0.1); color: var(--primary-light); border: 1px solid rgba(139, 92, 246, 0.15); }
+
+        main { padding: 2rem 3rem; padding-bottom: 120px; }
+        .dashboard-header { margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .dashboard-header h2 { font-size: 2.25rem; font-weight: 800; }
+
+        .glass-card { background: var(--card-glass); backdrop-filter: blur(25px); border: 1px solid var(--card-border); border-radius: 20px; padding: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.3); margin-bottom: 2rem; }
+
+        .terminal-header { display: grid; grid-template-columns: 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.25rem; padding: 0 1rem 1rem; border-bottom: 1px solid var(--card-border); font-size: 0.75rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; }
+        .terminal-row { display: grid; grid-template-columns: 1.5fr 1.5fr 0.8fr 1fr 1fr 50px; gap: 1.25rem; align-items: center; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(255,255,255,0.02); margin-top: 0.75rem; border: 1px solid transparent; transition: 0.3s; }
+        .terminal-row:hover { background: rgba(255,255,255,0.05); transform: translateY(-2px); border-color: rgba(139,92,246,0.3); }
+
+        .field-wrap { position: relative; width: 100%; display: flex; align-items: center; }
+        input, select { background: var(--input-bg); border: 1px solid var(--card-border); padding: 0.8rem 1rem; border-radius: 14px; color: white; width: 100%; font-size: 1rem; }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 14px; padding-right: 40px !important; appearance: none; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; background: #000; box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); }
+
+        .btn-mic-inline { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--text-dim); width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: 0.3s; }
+        .btn-mic-inline.active { color: var(--accent); }
+
+        .bottom-summary { position: fixed; bottom: 0; left: 260px; right: 0; background: rgba(9, 9, 11, 0.98); backdrop-filter: blur(40px); border-top: 1px solid var(--card-border); padding: 1.25rem 3.5rem; display: flex; justify-content: space-between; align-items: center; z-index: 500; }
+        .total-stack .value { font-size: 2.75rem; font-weight: 800; color: var(--primary-light); }
+
+        .btn-save-pro { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; padding: 1.15rem 2.5rem; border-radius: 18px; font-weight: 800; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4); transition: 0.3s; }
+        .btn-save-pro:hover { transform: translateY(-3px); filter: brightness(1.1); }
+
+        .excel-table-container { overflow-x: auto; border: 1px solid var(--card-border); border-radius: 16px; background: rgba(0,0,0,0.3); }
+        .excel-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .excel-table th { background: #111827; color: var(--text-dim); padding: 1rem; text-align: left; font-weight: 700; border: 1px solid var(--card-border); }
+        .excel-table td { padding: 1rem; border: 1px solid var(--card-border); }
+        
+        .btn-action { background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.2); color: var(--primary-light); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.8rem; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; transition:0.3s }
+        .btn-action:hover { background: var(--primary); color: white; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #report-printable, #report-printable * { visibility: visible; }
+            #report-printable { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 20px; box-sizing: border-box; }
+            .excel-table th, .excel-table td { border: 1px solid #333 !important; color: black !important; padding: 8px !important; }
+        }
+
+        #report-printable { display: none; }
+        .voice-pill { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); background: var(--accent); color: white; padding: 0.75rem 2rem; border-radius: 100px; font-weight: 800; display: none; align-items: center; gap: 1rem; box-shadow: 0 10px 30px rgba(244, 63, 94, 0.5); z-index: 1000; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div id="voice-pill" class="voice-pill">
+        <i data-lucide="mic"></i><span>AI LISTENING...</span>
+    </div>
+
+    <!-- REPLICA PRINTABLE AREA WITH MURUGAN IMAGE -->
+    <div id="report-printable">
+        <div style="display: grid; grid-template-columns: 120px 1fr 150px; align-items: start; margin-bottom: 10px; border-bottom: 2px solid black; padding-bottom: 15px;">
+            <div style="text-align: left;">
+                <div id="p-date" style="font-size: 0.8rem; font-weight: bold; margin-bottom: 5px;">-</div>
+                <img src="/murugan.png" style="width: 100px; height: 100px; object-fit: contain; border-radius: 8px;" alt="Lord Murugan">
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 2px;">ஓம் முருகன் துணை</div>
+                <div style="font-size: 1.7rem; font-weight: 900; letter-spacing: 1px; line-height: 1;">V.K.Y. FLOWER STALL</div>
+                <div style="font-size: 0.85rem; font-weight: bold; margin-top: 5px;">அ.விக்கேனேஷ், பனையந்துப்பட்டி, சேலம்.</div>
+                <div id="p-desc" style="font-size: 0.75rem; font-style: italic; margin-top: 10px; color: #444;">Sales Statement Report</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; font-weight: bold; margin-bottom: 5px;">PAGE: 1</div>
+                <div style="font-size: 1.7rem; font-weight: 900;">VKY</div>
+                <div style="font-size: 0.9rem; font-weight: 800; margin-top: 2px;">9600208658</div>
+            </div>
+        </div>
+        <table class="excel-table" style="width:100%; border: 1px solid #000;">
+            <thead><tr><th style="color:black">No.</th><th style="color:black">Date</th><th style="color:black">Customer</th><th style="color:black">Flower</th><th style="color:black">Weight</th><th style="color:black">Rate</th><th style="color:black; text-align:right">Total (₹)</th></tr></thead>
+            <tbody id="report-rows"></tbody>
+        </table>
+        <div style="margin-top: 20px; border-top: 2px solid black; padding-top: 10px; display: flex; justify-content: space-between;">
+            <p style="font-size: 0.8rem; font-style: italic;">* Generated by FloraPOS System</p>
+            <h2 id="report-summary-text" style="font-size:1.6rem; font-weight:800;">NET TOTAL: ₹0.00</h2>
+        </div>
+    </div>
+
+    <div class="app-layout">
+        <aside>
+            <div class="brand">
+                <img src="/murugan.png" alt="FloraVoice Logo" style="width: 36px; height: 36px; border-radius: 8px; object-fit: cover; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.4);">
+                <h1>FloraVoice</h1>
+            </div>
+            <nav>
+                <div class="nav-link active" onclick="tabs('bill')"><i data-lucide="terminal"></i>AI Terminal</div>
+                <div class="nav-link" onclick="tabs('history')"><i data-lucide="table"></i>Ledger History</div>
+                <div class="nav-link" onclick="tabs('flowers')"><i data-lucide="package"></i>Add Flowers</div>
+            </nav>
+        </aside>
+
+        <main>
+            <div id="tab-bill" class="tab-content">
+                <div class="dashboard-header"><h2>Sales Terminal</h2><button class="btn-action" onclick="loadStock()"><i data-lucide="refresh-cw"></i> Sync Stock</button></div>
+                <div class="glass-card">
+                    <div class="terminal-header"><span>Party Name</span><span>Flower</span><span style="padding-left:10px">KG</span><span>Price</span><span style="text-align: right">Total</span><span></span></div>
+                    <div id="bill-rows"></div>
+                    <button style="background:transparent; border:1px dashed var(--card-border); color:var(--text-dim); width:100%; padding:1rem; border-radius:14px; cursor:pointer; margin-top:1.25rem; font-weight:600" onclick="addLine()">+ New Transaction Line</button>
+                </div>
+            </div>
+
+            <div id="tab-history" class="tab-content hidden">
+                <div class="dashboard-header"><h2>Transaction Ledger</h2><button class="btn-save-pro" onclick="printFullReport()"><i data-lucide="printer"></i> Full Sales Report</button></div>
+                <div class="excel-table-container"><table class="excel-table"><thead><tr><th>No.</th><th>Date</th><th>Customer</th><th>Flower</th><th>Weight</th><th>Rate</th><th>Total</th><th>Options</th></tr></thead><tbody id="excel-body"></tbody></table></div>
+            </div>
+
+            <div id="tab-flowers" class="tab-content hidden"><div class="dashboard-header"><h2>Flower Catalog</h2></div><div class="glass-card"><table id="stock-list" style="width: 100%;"></table></div></div>
+
+            <div class="bottom-summary" id="bottom-bar">
+                <div class="total-stack"><span style="color:var(--text-dim); font-size:0.9rem; font-weight:700;">GRAND TOTAL</span><span class="value" id="res-grand">₹0.00</span></div>
+                <button class="btn-save-pro" onclick="submitBatch()"><i data-lucide="check-circle"></i> Save Batch</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API = window.location.origin + "/api";
+        let catalog = [];
+        let allBills = [];
+        let recognition;
+        let activeEl = null;
+
+        lucide.createIcons();
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'ta-IN';
+            recognition.onstart = () => document.getElementById('voice-pill').style.display = 'flex';
+            recognition.onend = () => {
+                document.getElementById('voice-pill').style.display = 'none';
+                document.querySelectorAll('.btn-mic-inline').forEach(b => b.classList.remove('active'));
+            };
+            recognition.onresult = (e) => {
+                let trans = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) trans += e.results[i][0].transcript;
+                if (activeEl) {
+                    if (activeEl.tagName === 'SELECT') match(activeEl, trans);
+                    else activeEl.value = trans;
+                    calc();
+                }
+            };
+        }
+
+        async function loadStock() {
+            try {
+                const r = await fetch(`${API}/inventory`);
+                const data = await r.json();
+                if (data && data.length > 0) {
+                    catalog = data;
+                    document.querySelectorAll('.t-flower').forEach(sel => {
+                        const currentVal = sel.value;
+                        sel.innerHTML = `<option value="">Select Flower...</option>` + 
+                            catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('');
+                        sel.value = currentVal;
+                    });
+                    document.getElementById('stock-list').innerHTML = catalog.map(c => `<tr><td style="padding:1rem; font-weight:700;">${c.flowerName}</td><td style="color:var(--primary-light)">${c.stockInKg} KG</td></tr>`).join('');
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function addLine() {
+            const box = document.getElementById('bill-rows');
+            const row = document.createElement('div');
+            row.className = 'terminal-row';
+            const options = catalog.length > 0 ? catalog.map(c => `<option value="${c.flowerName}">${c.flowerName}</option>`).join('') : '<option disabled>Loading stock...</option>';
+            row.innerHTML = `
+                <div class="field-wrap"><input type="text" class="t-party" placeholder="Name..."><button class="btn-mic-inline" onclick="talk(this, '.t-party')"><i data-lucide="mic" style="width:16px"></i></button></div>
+                <div class="field-wrap" style="padding-left:5px"><select class="t-flower" onchange="calc()"><option value="">Select Flower...</option>${options}</select><button class="btn-mic-inline" style="right:34px" onclick="talk(this, '.t-flower')"><i data-lucide="mic" style="width:16px"></i></button></div>
+                <input type="number" step="0.1" class="t-qty" value="1.0" oninput="calc()">
+                <input type="number" class="t-price" value="0" oninput="calc()">
+                <span style="text-align: right; font-weight: 800; color: var(--primary-light); font-size:1.1rem" class="t-line-tot">₹0.00</span>
+                <button style="background:transparent; border:none; color:var(--accent); cursor:pointer;" onclick="this.parentElement.remove(); calc();"><i data-lucide="trash-2" style="width:18px"></i></button>
+            `;
+            box.appendChild(row);
+            lucide.createIcons();
+            calc();
+        }
+
+        function talk(btn, sel) {
+            activeEl = btn.closest('.terminal-row').querySelector(sel);
+            btn.classList.add('active');
+            recognition.start();
+        }
+
+        function match(sel, txt) {
+            const v = txt.toLowerCase().trim();
+            for (let o of sel.options) if (v.includes(o.text.toLowerCase()) || o.text.toLowerCase().includes(v)) { sel.value = o.value; sel.dispatchEvent(new Event('change')); break; }
+        }
+
+        function calc() {
+            let sub = 0;
+            document.querySelectorAll('.terminal-row').forEach(r => {
+                const q = parseFloat(r.querySelector('.t-qty').value) || 0;
+                const p = parseFloat(r.querySelector('.t-price').value) || 0;
+                sub += (q * p);
+                r.querySelector('.t-line-tot').innerText = `₹${(q*p).toFixed(2)}`;
+            });
+            document.getElementById('res-grand').innerText = `₹${(sub * 1.05).toFixed(2)}`;
+        }
+
+        async function submitBatch() {
+            const rows = document.querySelectorAll('.terminal-row');
+            for (let r of rows) {
+                const party = r.querySelector('.t-party').value;
+                const item = r.querySelector('.t-flower').value;
+                const q = parseFloat(r.querySelector('.t-qty').value);
+                const p = parseFloat(r.querySelector('.t-price').value);
+                if (item && q > 0) await fetch(`${API}/bills`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerName: party || "Walk-in", items: [{ name: item, quantity: q, price: p }] }) });
+            }
+            document.getElementById('bill-rows').innerHTML = ''; addLine(); tabs('history');
+        }
+
+        function printFullReport() {
+            const reportArea = document.getElementById('report-printable');
+            reportArea.style.display = 'block';
+            let net = 0;
+            document.getElementById('p-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('p-desc').innerText = "Sales Statement Report";
+            document.getElementById('report-rows').innerHTML = [...allBills].reverse().map((b, i) => {
+                net += b.grandTotal;
+                return `<tr><td style="color:black; vertical-align:top;">${i + 1}</td><td style="color:black; vertical-align:top;">${new Date(b.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold; vertical-align:top;">${b.customerName}</td><td style="color:black; vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="color:black; vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="color:black; vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:black; font-weight:bold; text-align:right; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td></tr>`;
+            }).join('');
+            document.getElementById('report-summary-text').innerText = `NET TOTAL: ₹${net.toFixed(2)}`;
+            window.print();
+            reportArea.style.display = 'none';
+        }
+
+        function printBill(id) {
+            const bill = allBills.find(b => b.id === id);
+            const reportArea = document.getElementById('report-printable');
+            reportArea.style.display = 'block';
+            document.getElementById('p-date').innerText = new Date(bill.date).toLocaleDateString();
+            document.getElementById('p-desc').innerText = `Receipt No: ${id} - Party: ${bill.customerName}`;
+            document.getElementById('report-rows').innerHTML = bill.items.map((it, i) => `<tr><td style="color:black">${i+1}</td><td style="color:black">${new Date(bill.date).toLocaleDateString()}</td><td style="color:black; font-weight:bold">${bill.customerName}</td><td style="color:black">${it.name}</td><td style="color:black">${it.quantity} kg</td><td style="color:black">₹${it.price}</td><td style="color:black; font-weight:bold; text-align:right">₹${it.total.toFixed(2)}</td></tr>`).join('');
+            document.getElementById('report-summary-text').innerText = `GRAND TOTAL: ₹${bill.grandTotal.toFixed(2)}`;
+            window.print();
+            reportArea.style.display = 'none';
+        }
+
+        async function loadHistory() {
+            const r = await fetch(`${API}/bills`); allBills = await r.json();
+            const body = document.getElementById('excel-body');
+            body.innerHTML = [...allBills].reverse().map((b,i) => `<tr><td style="vertical-align:top;">${i + 1}</td><td style="white-space:nowrap; vertical-align:top;">${new Date(b.date).toLocaleString()}</td><td style="font-weight:700; vertical-align:top;">${b.customerName}</td><td style="vertical-align:top;">${b.items.map(it => it.name).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `${it.quantity} kg`).join('<br>')}</td><td style="vertical-align:top;">${b.items.map(it => `₹${it.price}`).join('<br>')}</td><td style="color:var(--primary-light); font-weight:800; font-size:1.1rem; vertical-align:top;">₹${b.grandTotal.toFixed(2)}</td><td style="vertical-align:top;"><button class="btn-action" onclick="printBill(${b.id})"><i data-lucide="printer"></i> Receipt</button></td></tr>`).join('');
+            lucide.createIcons();
+        }
+
+        function tabs(t) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            document.getElementById(`tab-${t}`).classList.remove('hidden');
+            if (event && event.currentTarget) event.currentTarget.classList.add('active');
+            document.getElementById('bottom-bar').style.display = (t === 'bill') ? 'flex' : 'none';
+            if (t === 'bill') loadStock(); 
+            if (t === 'flowers') loadStock();
+            if (t === 'history') loadHistory();
+        }
+
+        window.onload = async () => { await loadStock(); addLine(); setTimeout(() => { if(catalog.length === 0) loadStock(); }, 2000); };
+    </script>
+</body>
+</html>

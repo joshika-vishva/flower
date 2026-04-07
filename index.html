@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloraPOS | Flower Shop Billing System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.3);
+            --secondary: #ec4899;
+            --accent: #f43f5e;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        aside {
+            background: rgba(15, 23, 42, 0.8);
+            border-right: 1px solid var(--border);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 3rem;
+        }
+
+        .logo i {
+            color: var(--primary);
+            filter: drop-shadow(0 0 8px var(--primary-glow));
+        }
+
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+
+        }
+
+        nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-radius: 12px;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+        }
+
+        .nav-item.active {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .nav-item i {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Main Content */
+        main {
+            padding: 2.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
+        }
+
+        .header-title h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header-title p {
+            color: var(--text-dim);
+        }
+
+        /* Cards */
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Billing Form */
+        .billing-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .form-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .customer-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .input-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        input, select {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border);
+            padding: 0.875rem 1.25rem;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+        }
+
+        /* Items Table */
+        .items-container {
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 1rem;
+        }
+
+        th {
+            text-align: left;
+            padding: 0 1rem 0.5rem 1rem;
+            color: var(--text-dim);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        td {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        td:first-child {
+            border-left: 1px solid var(--border);
+            border-radius: 12px 0 0 12px;
+        }
+
+        td:last-child {
+            border-right: 1px solid var(--border);
+            border-radius: 0 12px 12px 0;
+            text-align: right;
+        }
+
+        .btn-add-item {
+            background: transparent;
+            border: 2px dashed var(--border);
+            color: var(--text-dim);
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+
+        .btn-add-item:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        /* Summary */
+        .billing-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-row .label {
+            color: var(--text-dim);
+        }
+
+        .summary-row.total {
+            margin-top: 1rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .summary-row.total .value {
+            color: var(--primary);
+            font-size: 1.75rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 1.25rem;
+            border-radius: 16px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4);
+            transition: all 0.3s;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 30px -10px rgba(139, 92, 246, 0.6);
+        }
+
+        .btn-icon-only {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--accent);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-icon-only:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* Sections visibility */
+        .section-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Inventory Table */
+        .inventory-table-container {
+            margin-top: 2rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .badge-warning { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+        .badge-danger { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease-out;
+            color: white;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notification.success { border-bottom: 3px solid var(--success); }
+        .notification.error { border-bottom: 3px solid var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside>
+            <div class="logo">
+                <i data-lucide="flower-2"></i>
+                <h1>FloraPOS</h1>
+            </div>
+            <nav>
+                <div class="nav-item active" onclick="showSection('billing')">
+                    <i data-lucide="receipt"></i>
+                    <span>New Bill</span>
+                </div>
+                <div class="nav-item" onclick="showSection('inventory')">
+                    <i data-lucide="package"></i>
+                    <span>Inventory</span>
+                </div>
+                <div class="nav-item" onclick="showSection('history')">
+                    <i data-lucide="history"></i>
+                    <span>Sales History</span>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main>
+            <!-- Billing Section -->
+            <div id="section-billing" class="section-content active">
+                <header>
+                    <div class="header-title">
+                        <h2>Create New Bill</h2>
+                        <p>Generate sales invoices for customers</p>
+                    </div>
+                </header>
+
+                <div class="billing-grid">
+                    <div class="form-section">
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-dim)">Customer Details</h3>
+                            <div class="customer-info">
+                                <div class="input-group">
+                                    <label>Customer Name</label>
+                                    <input type="text" id="cust-name" placeholder="John Doe">
+                                </div>
+                                <div class="input-group">
+                                    <label>Phone Number</label>
+                                    <input type="tel" id="cust-phone" placeholder="+91 00000 00000">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card">
+                            <h3 style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--text-dim)">Items</h3>
+                            <div class="items-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 40%">Flower Item</th>
+                                            <th style="width: 20%">Qty (kg)</th>
+                                            <th style="width: 20%">Price/kg</th>
+                                            <th style="width: 15%">Total</th>
+                                            <th style="width: 5%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bill-items-body">
+                                        <!-- Item rows go here -->
+                                    </tbody>
+                                </table>
+                                <button class="btn-add-item" onclick="addNewItemRow()">
+                                    <i data-lucide="plus" style="width: 16px"></i>
+                                    Add Another Flower
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="billing-summary-section">
+                        <div class="glass-card billing-summary">
+                            <h3 style="margin-bottom: 0.5rem">Order Summary</h3>
+                            <div class="summary-row">
+                                <span class="label">Subtotal</span>
+                                <span class="value" id="summary-subtotal">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="label">GST (5%)</span>
+                                <span class="value" id="summary-gst">₹0.00</span>
+                            </div>
+                            <div class="summary-row">
+                                <span class="label">Discount (₹)</span>
+                                <input type="number" id="summary-discount" value="0" style="width: 80px; padding: 0.4rem; text-align: right;" onchange="calculateGrandTotal()">
+                            </div>
+                            <div class="summary-row total">
+                                <span class="label">Grand Total</span>
+                                <span class="value" id="summary-grand-total">₹0.00</span>
+                            </div>
+                            
+                            <button class="btn-primary" onclick="submitBill()">
+                                <i data-lucide="check-circle"></i>
+                                Generate Invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Section -->
+            <div id="section-inventory" class="section-content">
+                <header>
+                    <div class="header-title">
+                        <h2>Stock Management</h2>
+                        <p>Monitor and update flower inventory levels</p>
+                    </div>
+                    <button class="btn-primary" style="margin-top: 0; padding: 0.8rem 1.5rem;" onclick="showAddStockModal()">
+                        <i data-lucide="plus"></i>
+                        Add New Item
+                    </button>
+                </header>
+
+                <div class="glass-card">
+                    <div class="inventory-table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Flower Name</th>
+                                    <th>Stock (kg)</th>
+                                    <th>Status</th>
+                                    <th>Low Stock Alert</th>
+                                    <th style="text-align: right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-items-body">
+                                <!-- Inventory items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div id="section-history" class="section-content">
+                <header>
+                    <div class="header-title">
+                        <h2>Sales History</h2>
+                        <p>View past transactions and invoices</p>
+                    </div>
+                </header>
+                <div class="glass-card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Bill ID</th>
+                                <th>Customer</th>
+                                <th>Date</th>
+                                <th>Grand Total</th>
+                                <th style="text-align: right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-items-body">
+                            <!-- History items -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Simple JS Prompt used for now, could be replaced with fancy overlay -->
+
+    <div id="notification" class="notification">
+        <span id="notification-msg"></span>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:8080/api";
+        let inventoryData = [];
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Section Switching
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`section-${sectionId}`).classList.add('active');
+            event.currentTarget.classList.add('active');
+
+            if (sectionId === 'inventory') fetchInventory();
+            if (sectionId === 'history') fetchSalesHistory();
+        }
+
+        // --- BILLING LOGIC ---
+
+        function addNewItemRow() {
+            const tbody = document.getElementById('bill-items-body');
+            const row = document.createElement('tr');
+            row.className = 'bill-item-row';
+            
+            row.innerHTML = `
+                <td>
+                    <select class="item-select" onchange="onItemSelect(this)">
+                        <option value="">Select Flower</option>
+                        ${inventoryData.map(item => `<option value="${item.flowerName}">${item.flowerName}</option>`).join('')}
+                    </select>
+                </td>
+                <td><input type="number" step="0.1" class="item-qty" value="1.0" onchange="calculateRowTotal(this)"></td>
+                <td><input type="number" class="item-price" value="0" onchange="calculateRowTotal(this)"></td>
+                <td class="row-total">₹0.00</td>
+                <td>
+                    <button class="btn-icon-only" onclick="this.closest('tr').remove(); calculateGrandTotal();">
+                        <i data-lucide="trash-2" style="width: 16px"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(row);
+            lucide.createIcons();
+        }
+
+        function onItemSelect(select) {
+            const flowerName = select.value;
+            const item = inventoryData.find(i => i.flowerName === flowerName);
+            if (item) {
+                const row = select.closest('tr');
+                // Could pre-fill price if we had it in inventory model, but let's leave it manual for flexibility
+                calculateRowTotal(select);
+            }
+        }
+
+        function calculateRowTotal(el) {
+            const row = el.closest('tr');
+            const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+            const price = parseFloat(row.querySelector('.item-price').value) || 0;
+            const total = qty * price;
+            row.querySelector('.row-total').innerText = `₹${total.toFixed(2)}`;
+            calculateGrandTotal();
+        }
+
+        function calculateGrandTotal() {
+            let subtotal = 0;
+            document.querySelectorAll('.bill-item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.item-price').value) || 0;
+                subtotal += qty * price;
+            });
+
+            const gst = subtotal * 0.05;
+            const discount = parseFloat(document.getElementById('summary-discount').value) || 0;
+            const grandTotal = subtotal + gst - discount;
+
+            document.getElementById('summary-subtotal').innerText = `₹${subtotal.toFixed(2)}`;
+            document.getElementById('summary-gst').innerText = `₹${gst.toFixed(2)}`;
+            document.getElementById('summary-grand-total').innerText = `₹${grandTotal.toFixed(2)}`;
+        }
+
+        async function submitBill() {
+            const customerName = document.getElementById('cust-name').value;
+            const customerPhone = document.getElementById('cust-phone').value;
+            
+            if (!customerName) {
+                notify("Customer name is required", "error");
+                return;
+            }
+
+            const items = [];
+            document.querySelectorAll('.bill-item-row').forEach(row => {
+                const name = row.querySelector('.item-select').value;
+                const qty = parseFloat(row.querySelector('.item-qty').value);
+                const price = parseFloat(row.querySelector('.item-price').value);
+                if (name && qty > 0) {
+                    items.push({
+                        name: name,
+                        quantity: qty,
+                        price: price,
+                        total: qty * price
+                    });
+                }
+            });
+
+            if (items.length === 0) {
+                notify("Add at least one item", "error");
+                return;
+            }
+
+            const subtotal = parseFloat(document.getElementById('summary-subtotal').innerText.replace('₹', ''));
+            const gstAmount = parseFloat(document.getElementById('summary-gst').innerText.replace('₹', ''));
+            const discountAmount = parseFloat(document.getElementById('summary-discount').value) || 0;
+            const grandTotal = parseFloat(document.getElementById('summary-grand-total').innerText.replace('₹', ''));
+
+            const billData = {
+                customerName,
+                customerPhone,
+                date: new Date().toISOString(),
+                items,
+                subtotal,
+                gstPercentage: 5.0,
+                gstAmount,
+                discountAmount,
+                grandTotal
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/bills`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(billData)
+                });
+
+                if (response.ok) {
+                    notify("Bill generated successfully!", "success");
+                    resetBillingForm();
+                } else {
+                    throw new Error("Failed to save bill");
+                }
+            } catch (err) {
+                notify(err.message, "error");
+            }
+        }
+
+        function resetBillingForm() {
+            document.getElementById('cust-name').value = '';
+            document.getElementById('cust-phone').value = '';
+            document.getElementById('bill-items-body').innerHTML = '';
+            document.getElementById('summary-discount').value = 0;
+            calculateGrandTotal();
+            addNewItemRow();
+        }
+
+        // --- INVENTORY LOGIC ---
+
+        async function fetchInventory() {
+            try {
+                const response = await fetch(`${API_BASE}/inventory`);
+                inventoryData = await response.json();
+                renderInventory();
+            } catch (err) {
+                notify("Failed to load inventory", "error");
+            }
+        }
+
+        function renderInventory() {
+            const tbody = document.getElementById('inventory-items-body');
+            tbody.innerHTML = inventoryData.map(item => {
+                let statusClass = 'badge-success';
+                let statusText = 'In Stock';
+                if (item.stockInKg <= 0) {
+                    statusClass = 'badge-danger';
+                    statusText = 'Out of Stock';
+                } else if (item.stockInKg <= item.lowStockThreshold) {
+                    statusClass = 'badge-warning';
+                    statusText = 'Low Stock';
+                }
+
+                return `
+                    <tr>
+                        <td><strong>${item.flowerName}</strong></td>
+                        <td>${item.stockInKg} kg</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>${item.lowStockThreshold} kg</td>
+                        <td style="text-align: right">
+                            <button class="btn-icon-only" style="display: inline-flex" onclick="editStock('${item.flowerName}')">
+                                <i data-lucide="edit-3" style="width: 14px"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+
+        async function showAddStockModal() {
+            const flowerName = prompt("Enter Flower Name:");
+            if (!flowerName) return;
+            const stock = parseFloat(prompt("Enter Initial Stock (kg):")) || 0;
+            const threshold = parseFloat(prompt("Enter Low Stock Threshold (kg):")) || 2;
+
+            saveInventoryItem({ flowerName, stockInKg: stock, lowStockThreshold: threshold });
+        }
+
+        function editStock(name) {
+            const item = inventoryData.find(i => i.flowerName === name);
+            const newStock = parseFloat(prompt(`Enter new stock for ${name} (kg):`, item.stockInKg));
+            if (isNaN(newStock)) return;
+            saveInventoryItem({ ...item, stockInKg: newStock });
+        }
+
+        async function saveInventoryItem(item) {
+            try {
+                const response = await fetch(`${API_BASE}/inventory`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+                if (response.ok) {
+                    notify("Inventory updated!", "success");
+                    fetchInventory();
+                }
+            } catch (err) {
+                notify("Error updating inventory", "error");
+            }
+        }
+
+        // --- HISTORY LOGIC ---
+
+        async function fetchSalesHistory() {
+            try {
+                const response = await fetch(`${API_BASE}/bills`);
+                const bills = await response.json();
+                const tbody = document.getElementById('history-items-body');
+                tbody.innerHTML = bills.map(bill => `
+                    <tr>
+                        <td>#${bill.id}</td>
+                        <td>${bill.customerName}</td>
+                        <td>${new Date(bill.date).toLocaleString()}</td>
+                        <td style="color: var(--primary); font-weight: 600">₹${bill.grandTotal.toFixed(2)}</td>
+                        <td style="text-align: right">
+                            <button class="btn-icon-only" style="display: inline-flex; background: rgba(139, 92, 246, 0.1); color: var(--primary);" onclick="viewBillDetails(${bill.id})">
+                                <i data-lucide="eye" style="width: 14px"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+                lucide.createIcons();
+            } catch (err) {
+                notify("History load failed", "error");
+            }
+        }
+
+        // --- UTILS ---
+
+        function notify(msg, type) {
+            const n = document.getElementById('notification');
+            const nm = document.getElementById('notification-msg');
+            nm.innerText = msg;
+            n.className = `notification ${type}`;
+            n.style.display = 'flex';
+            setTimeout(() => n.style.display = 'none', 3000);
+        }
+
+        // Initial Load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await fetchInventory();
+            addNewItemRow();
+        });
+    </script>
+
+</body>
+</html>
