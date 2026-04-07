@@ -269,7 +269,26 @@
         async function loadStock() {
             try {
                 const r = await fetch(`${API}/inventory`);
-                const data = await r.json();
+                let data = await r.json();
+                
+                // Add new flowers and fix spelling
+                const newFlowers = [
+                    { flowerName: "அரளி1", stockInKg: 0 },
+                    { flowerName: "ஹைப்ரிட் அரளி 1", stockInKg: 0 }
+                ];
+                
+                if (!data) data = [];
+                
+                // Fix spelling for existing hybrid arali
+                data.forEach(f => {
+                    if (f.flowerName === "ஹைப்ரிட் அரலி") f.flowerName = "ஹைப்ரிட் அரளி";
+                });
+                
+                // Add if not exists
+                newFlowers.forEach(nf => {
+                    if (!data.find(d => d.flowerName === nf.flowerName)) data.push(nf);
+                });
+
                 if (data && data.length > 0) {
                     catalog = data;
                     document.querySelectorAll('.t-flower').forEach(sel => {
@@ -419,11 +438,14 @@
         }
 
         function printFullReport() {
+            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer([...allBills]));
+            if (cust === null) return;
+
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
             document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
-            document.getElementById('p-customer').innerText = getCommonCustomer([...allBills]);
+            document.getElementById('p-customer').innerText = cust;
             document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]); // forward chronologically
             
             let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
@@ -433,11 +455,14 @@
         }
 
         function downloadPDF() {
+            const cust = prompt("Enter Customer Name for Report:", getCommonCustomer([...allBills]));
+            if (cust === null) return;
+
             const reportArea = document.getElementById('report-printable');
             reportArea.style.display = 'block';
             document.getElementById('p-date').innerText = new Date().toLocaleDateString('en-GB');
             document.getElementById('p-desc').innerText = "Sales Statement Report";
-            document.getElementById('p-customer').innerText = getCommonCustomer([...allBills]);
+            document.getElementById('p-customer').innerText = cust;
             document.getElementById('report-rows').innerHTML = buildNestedLedger([...allBills]);
             
             let net = allBills.reduce((acc, b) => acc + b.grandTotal, 0);
