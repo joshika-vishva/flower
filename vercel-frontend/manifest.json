@@ -1,8 +1,8 @@
 {
   "name": "FloraVoice ERP",
   "short_name": "FloraVoice",
-  "description": "Flower Shop Sales Terminal",
-  "start_url": "/index.html",
+  "description": "Smart automated sales terminal for V.K.Y. Flower Stall",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#03040b",
   "theme_color": "#8b5cf6",
@@ -16,7 +16,8 @@
     {
       "src": "/murugan.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
