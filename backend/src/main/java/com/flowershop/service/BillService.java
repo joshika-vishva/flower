@@ -71,4 +71,17 @@ public class BillService {
     public void deleteBill(Long id) {
         billRepository.deleteById(id);
     }
+
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 86400000) // Runs every 24 hours
+    @Transactional
+    public void autoDeleteOldBills() {
+        java.time.LocalDateTime oneMonthAgo = java.time.LocalDateTime.now().minusDays(30);
+        billRepository.deleteByDateBefore(oneMonthAgo);
+        System.out.println("Automated Cleanup: Deleted all bills older than " + oneMonthAgo);
+    }
+
+    @Transactional
+    public Bill updateBill(Long id, Bill updatedBill) {
+        return null;
+    }
 }
